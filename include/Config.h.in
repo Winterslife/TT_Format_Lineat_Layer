@@ -1,0 +1,66 @@
+/// @author    Johannes de Fine Licht (definelicht@inf.ethz.ch)
+/// @copyright This software is copyrighted under the BSD 3-Clause License. 
+
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#ifdef MM_HALF_PRECISION
+#include "hls_half.h"
+#endif
+#include "hlslib/xilinx/Operators.h"
+#include "hlslib/xilinx/DataPack.h"
+using uint8_t = unsigned char;
+
+// 数据类型定义
+#cmakedefine MM_HALF_PRECISION
+
+#ifdef MM_HALF_PRECISION
+using Data_t = half;
+#else
+using Data_t = ${MM_DATA_TYPE};
+#endif
+
+// 矩阵乘法配置常量
+constexpr int kMemoryWidthBytesN = ${MM_MEMORY_BUS_WIDTH_N};
+constexpr int kMemoryWidthBytesK = ${MM_MEMORY_BUS_WIDTH_K};
+constexpr int kMemoryWidthBytesM = ${MM_MEMORY_BUS_WIDTH_M};
+
+// Tensor Train相关常量
+constexpr unsigned kTTMaxDims = ${TT_MAX_DIMS};           // 最大维度数
+constexpr unsigned kTTMaxRank = ${TT_MAX_RANK};          // 最大TT秩
+constexpr unsigned kTTMaxModeSize = ${TT_MAX_MODE_SIZE}; // 每个模式的最大大小
+constexpr unsigned kTTMaxBatchSize = ${TT_MAX_BATCH_SIZE};// 最大batch size
+constexpr int kTTMemoryWidth = kMemoryWidthBytesM / sizeof(Data_t);
+// Tensor Train 常量配置
+// constexpr unsigned TT_MAX_DIMS = ${TT_MAX_DIMS};
+// constexpr unsigned TT_MAX_RANK = ${TT_MAX_RANK};
+// constexpr unsigned TT_MAX_MODE_SIZE = ${TT_MAX_MODE_SIZE};
+// constexpr unsigned TT_MAX_BATCH_SIZE = ${TT_MAX_BATCH_SIZE};
+
+#ifndef MM_DYNAMIC_SIZES
+constexpr unsigned long kSizeN = ${MM_SIZE_N};
+constexpr unsigned long kSizeK = ${MM_SIZE_K};
+constexpr unsigned long kSizeM = ${MM_SIZE_M};
+constexpr unsigned long kSizeR2 = ${MM_SIZE_R2};
+#endif
+
+constexpr unsigned long kOuterTileSizeN = ${MM_MEMORY_TILE_SIZE_N};
+constexpr unsigned long kOuterTileSizeM = ${MM_MEMORY_TILE_SIZE_M};
+constexpr unsigned long kInnerTileSizeN = ${MM_PARALLELISM_N};
+constexpr int kComputeTileSizeM = ${MM_PARALLELISM_M};
+constexpr int kComputeTileSizeN = 1;
+constexpr int kTransposeWidthBytes = ${MM_TRANSPOSE_WIDTH};
+constexpr float kFrequency = ${MM_CLOCK_INTERNAL};
+constexpr auto kGoldenDir = "${MM_GOLDEN_DIR}"; 
+using OperatorMap = hlslib::op::${MM_MAP_OP}<Data_t>;
+using OperatorReduce = hlslib::op::${MM_REDUCE_OP}<Data_t>;
+
+#if ${MM_MEMORY_BUS_WIDTH_M} != ${MM_KERNEL_WIDTH_M} 
+  #define MM_CONVERT_B
+#endif
+
+#if (defined(MM_TRANSPOSED_A) && \
+     (${MM_DATA_WIDTH_${MM_DATA_TYPE}} != ${MM_MEMORY_BUS_WIDTH_N}))
+#define MM_CONVERT_A
+#endif
